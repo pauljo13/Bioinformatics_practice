@@ -52,8 +52,8 @@ library(splines)
 ###  Data load
 ``` R
 gse <- getGEO("GSE15824") # 데이터를 가져옴
-pheno <- attr(attr(ges[[1]], "phenoData"), "data")
-exprs <- attr(ges[[1]], "assayData")[["exprs"]]
+pheno <- attr(attr(ges[[1]], "phenoData"), "data") # 표현형 데이터를 추출
+exprs <- attr(ges[[1]], "assayData")[["exprs"]] # 유전자 발현 데이터를 추출
 ```
 #####  GEO 데이터
 GEO (Gene Expression Omnibus)에서 **GSE**와 **GPL**은 각각 **실험 데이터**와 **플랫폼(기술)**을 의미합니다.
