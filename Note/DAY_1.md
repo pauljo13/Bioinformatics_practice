@@ -143,7 +143,39 @@ GEO (Gene Expression Omnibus)에서 **GSE**와 **GPL**은 각각 **실험 데이
 
 🚀 **즉, GSE는 연구 데이터**, **GPL은 데이터 생성 기술(플랫폼)**입니다!
 
+### 데이터 전처리
+1. `getGEO`로 다운 받은 데이터에서 expression과 phenotype으로 나눈다.
+2. expression에 있는 column 이름을 phenotype의 title이름으로 변경한다.
+3. expression에 row에 있는 gene ID을 GPL570의 gene symbol로 변경한다.
+4. 1차적으로 정리된 데이터는 `write.table`로 저장하여 보관한다.
+
+
+### EDA
+EDA는 python을 이용하여 진행 하였다.
 - GSE15824
-	- 30 개
-		- GBM : 12개
-		- normal : 5개
+	- expression data
+		- shape : 54675 x 45
+	- phenotype data
+		- shape : 45 x 45
+		- NaN column : 10 / 45
+		- gender : male : 25(83.3%) / female : 5(16.7%)
+		- age :  mean : 46.27 / min : 13 / max : 70 / std : 12.75
+		- source
+			- brain tumor : 40
+				- brain tumor tissue : 30 (66.7%)
+				- brain tumor cells : 10 (22.2%)
+			- normal : 5
+				- normal astrocytes : 3 (6.7%)
+				- normal brain tissue : 2 (4.4%)
+		- cell type
+			- glioblastoma : 25 (58.1%)
+			- astrocytoma : 8 (18.6%)
+			- oligodendrioglioma : 7 (16.3%)
+			- astrocytes : 3 (7.0%)
+		- cell line : 총 10개의 cell line(glioblastoma)
+			- LN018 : 2
+			- LN215 : 2
+			- LN229 : 2
+			- LN319 : 2
+			- BS149 : 2
+		
