@@ -86,7 +86,7 @@ EnhancedVolcano(deg_results,
                 FCcutoff = 1,                         
                 title = 'Differential Expression: GBM vs Normal (GSE15824)',
                 subtitle = 'Microarray Data Analysis',
-                xlab = 'Log2 Fold Change',
+                xlab = 'Log2 Fold Change',+++++++
                 ylab = '-Log10 Adjusted P-value',
                 pointSize = 2,
                 labSize = 3,
