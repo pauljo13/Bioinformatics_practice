@@ -39,9 +39,18 @@ View(exp_matrix)
 metadata <- colData(data)
 View(metadata)
 
+row_data <- rowData(data)
+colnames(row_data)
+rownames(row_data)
+print(row_data$gene_id)
+print(row_data$gene_name)
+table(row_data$gene_type)
+
 print(metadata$definition)
 length(colnames(metadata))
 print(table(metadata$definition))
+gene_map <- as.data.frame(row_data)[, c("gene_id", "gene_name")]
+res$hgnc_symbol <- gene_map$gene_name[match(rownames(res), gene_map$gene_id)]
 
 group <- factor(ifelse(metadata$definition %in% c("Primary solid Tumor", "Recurrent Solid Tumor"), "Tumor", "Normal"))
 print(table(group))
@@ -84,6 +93,31 @@ ggplot(res_df, aes(x = log2FoldChange, y = neg_log10_padj, color = significant))
 library(EnhancedVolcano)
 
 # 상위 10개 유전자 선택
+key_genes <- head(res[order(res$padj), ], 10)$log2FoldChange
+names(key_genes) <- head(rownames(res[order(res$padj), ]), 10)
+
+EnhancedVolcano(res,
+                lab = rownames(res),
+                x = "log2FoldChange",
+                y = "padj",
+                selectLab = names(key_genes),  # 라벨링할 유전자
+                title = "Volcano Plot: Tumor vs Normal",
+                pCutoff = 0.05,
+                FCcutoff = 1.0,
+                pointSize = 2.0,
+                labSize = 3.0,
+                drawConnectors = TRUE,         # 라벨과 점 연결선
+                widthConnectors = 0.5)         # 연결선 두께
+
+
+
+gene_name <- c()
+
+
+gene_name
+
+rownames(res) <- gene_name
+
 key_genes <- head(res[order(res$padj), ], 10)$log2FoldChange
 names(key_genes) <- head(rownames(res[order(res$padj), ]), 10)
 
