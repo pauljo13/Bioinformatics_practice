@@ -86,12 +86,16 @@ View(fit2)
 
 topTable(fit2, coef = "Tumor_vs_Normal", adjust = "BH", number = 20)
 
+results2 <- topTable(fit2, coef = "Tumor_vs_Normal", adjust = "BH", number = Inf)
+dim(results2)
+dim(deg_results)
+
 # Volcano Plot
-deg_results$Significance <- ifelse(
-  deg_results$adj.P.Val < 0.05 & abs(deg_results$logFC) > 1, "Significant", "Not significant"
+results2$Significance <- ifelse(
+  results2$adj.P.Val < 0.05 & abs(results2$logFC) > 1, "Significant", "Not significant"
   )
 
-ggplot(deg_results, aes(x = logFC, y = -log10(adj.P.Val), color = Significance)) +
+ggplot(results2, aes(x = logFC, y = -log10(adj.P.Val), color = Significance)) +
   geom_point(alpha = 0.6, size = 1.5) +
   scale_color_manual(values = c("red", "black")) +
   theme_minimal() +
@@ -101,8 +105,10 @@ ggplot(deg_results, aes(x = logFC, y = -log10(adj.P.Val), color = Significance))
   geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
   geom_vline(xintercept = c(-1, 1), linetype = "dashed")
 
-EnhancedVolcano(deg_results,
-                lab = rownames(deg_results),           # 유전자 이름
+
+
+EnhancedVolcano(results2,
+                lab = results2$ID,           # 유전자 이름
                 x = "logFC",                           # x축: Log Fold Change
                 y = "adj.P.Val",                       # y축: Adjusted P-value
                 xlab = bquote(~Log[2]~" Fold Change"), # x축 라벨
@@ -119,7 +125,8 @@ EnhancedVolcano(deg_results,
                 legendIconSize = 4.0,                    # 범례 아이콘 크기
                 col = c("black", "blue", "green", "red"), # 점 색상 설정
                 drawConnectors = TRUE,                  # 유전자명과 점을 선으로 연결
-                widthConnectors = 0.5                    # 선 굵기
+                widthConnectors = 0.5,             # 선 굵기
+                max.overlaps = 5
 )
 
 
@@ -130,3 +137,50 @@ all(rownames(exp_matrix_filtered) %in% rownames(deg_results))
 all(rownames(deg_results) %in% rownames(exp_matrix_filtered))
 
 head(rownames(v))
+
+
+View(results2)
+
+top_genes <- head(results2[order(results2$adj.P.Val), ], 30)$ID 
+top_genes
+top_exp <- exp_matrix_filtered[top_genes, ]
+
+exp_long <- as.data.frame(t(top_exp))
+exp_long$Sample <- rownames(exp_long)
+exp_long <- reshape2::melt(exp_long, id.vars = "Sample")
+colnames(exp_long) <- c("Sample", "Gene", "Expression")
+
+exp_long$Group <- metadata_filtered$shortLetterCode[match(exp_long$Sample, rownames(metadata_filtered))]
+View(exp_long)
+
+
+
+
+Boxplot_gene <- function(df, g) {
+  new_df <- subset(df, Gene == g)
+  print(dim(new_df))
+  p <- ggplot(new_df, aes(x = Gene, y = Expression, fill = Group)) +
+    geom_boxplot(outlier.shape = NA) +  # 이상치 표시 안함
+    geom_jitter(position = position_jitter(0.2), alpha = 0.5) +  # 샘플 점 찍기
+    theme_minimal() +
+    scale_fill_manual(values = c("NT" = "blue", "TP" = "red")) +
+    labs(title = "Expression of Top 30 DEGs (NT vs TP)",
+         x = g,
+         y = "Expression Level") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+  
+  return(p)
+}
+
+exp_long$Expression <- log2(exp_long$Expression + 1)
+
+Boxplot_gene(exp_long, top_genes[1])
+Boxplot_gene(exp_long, top_genes[2])
+Boxplot_gene(exp_long, top_genes[3])
+Boxplot_gene(exp_long, top_genes[4])
+Boxplot_gene(exp_long, top_genes[5])
+Boxplot_gene(exp_long, top_genes[6])
+Boxplot_gene(exp_long, top_genes[7])
+Boxplot_gene(exp_long, top_genes[8])
+Boxplot_gene(exp_long, top_genes[9])
+Boxplot_gene(exp_long, top_genes[10])
