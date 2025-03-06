@@ -1,5 +1,5 @@
 # DEG used TCGA data
-# install packages and load library
+# install packages and load library ===========================================
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManger")
 
@@ -21,7 +21,7 @@ library(edgeR)
 library(tidyverse)
 library(biomaRt)
 
-# data load
+# data load ===================================================================
 # TCGA-LUAD 데이터를 검색
 query <- GDCquery(
   project = "TCGA-LUAD",
@@ -39,15 +39,26 @@ exp_matrix <- assay(data)
 metadata <- colData(data)
 row_data <- rowData(data)
 
-# EDA
+
+# EDA ==========================================================================
 View(exp_matrix)
 View(metadata)
 View(row_data)
 
 dim(exp_matrix)
-meta <-as.data.frame(metadata)
-dim(meta)
 dim(row_data)
+
+meta <-as.data.frame(metadata)
+need_col <- c("barcode","patient","shortLetterCode", "tumor_descriptor", "sample_type", 
+              "tissue_type", "age_at_diagnosis", "laterality", "treatments",
+              "tissue_or_organ_of_origin", "primary_diagnosis", "prior_treatment", "classification_of_tumor",
+              "icd_10_code", "tumor_of_origin", "sites_of_involvement", "tobacco_smoking_quit_year",
+              "tobacco_smoking_status", "pack_years_smoked", "gender", "race", "ethnicity", "vital_status",
+              "age_at_index", "days_to_death", "primary_site", "ajcc_pathologic_stage", "ajcc_pathologic_t", "ajcc_pathologic_n", "ajcc_pathologic_m")
+meta <- meta[,need_col]
+dim(meta)
+View(meta)
+
 
 gene_symbol <- tibble("ID" = row_data$gene_id,"Name" = row_data$gene_name,"Type" = row_data$gene_type)
 gene_symbol
@@ -76,14 +87,65 @@ mapping <- data.frame(
   Numeric = c(1.0, 1.1, 1.2, 2.0, 2.1, 2.2, 3.1, 3.2, 4.0)
 )
 meta$Stage <- mapping$Numeric[match(meta$ajcc_pathologic_stage, mapping$Stage)]
-meta$Stage[is.na(meta$Stage) & meta$shortLetterCode == "NT"] <- 0.0
-head(meta$Stage)
-ggplot(meta, aes(Stage)) +
-  geom_freqpoly()
-sum(is.na(meta$Stage))
-View(meta[is.na(meta$Stage),]
 
-# DEG analysis
+sum(is.na(meta$Stage))
+table(meta$shortLetterCode)
+mean(meta[meta$shortLetterCode == "TP", ]$Stage, na.rm = TRUE)
+
+## Stage 결측치 처리
+stNa <- meta[is.na(meta$Stage),]
+tnm_not_na <- stNa[!is.na(stNa$ajcc_pathologic_t) & 
+                     !is.na(stNa$ajcc_pathologic_n) & 
+                     !is.na(stNa$ajcc_pathologic_m), ]
+tnm_not_na[,c("Stage", "ajcc_pathologic_t", "ajcc_pathologic_n", "ajcc_pathologic_m", 
+              "tissue_type", "shortLetterCode")]
+
+### Stage NA 중 NT인 값 처리
+dim(stNa[stNa$shortLetterCode == "NT",])
+sum(is.na(meta$Stage))
+meta$Stage[meta$shortLetterCode == "NT" & is.na(meta$ajcc_pathologic_stage)] <- 0.0
+sum(is.na(meta$Stage))
+
+### NA인 Tumor 샘플에 TNM 기반으로 Numeric 채우기
+sum(is.na(meta$Stage))
+meta$Stage[is.na(meta$Stage) & meta$tissue_type == "Tumor" & 
+               !is.na(meta$ajcc_pathologic_t) & !is.na(meta$ajcc_pathologic_n) & 
+               !is.na(meta$ajcc_pathologic_m) & 
+               meta$ajcc_pathologic_t == "T1a" & 
+               meta$ajcc_pathologic_n == "N1" & meta$ajcc_pathologic_m == "M0"] <- 2.2  # Stage IIB
+meta$Stage[is.na(meta$Stage) & meta$tissue_type == "Tumor" & 
+               !is.na(meta$ajcc_pathologic_t) & !is.na(meta$ajcc_pathologic_n) & 
+               !is.na(meta$ajcc_pathologic_m) & 
+               meta$ajcc_pathologic_t == "T2" & 
+               meta$ajcc_pathologic_n == "N1" & meta$ajcc_pathologic_m == "M0"] <- 2.2  # Stage IIB
+meta$Stage[is.na(meta$Stage) & meta$tissue_type == "Tumor" & 
+               !is.na(meta$ajcc_pathologic_t) & !is.na(meta$ajcc_pathologic_n) & 
+               !is.na(meta$ajcc_pathologic_m) & 
+               meta$ajcc_pathologic_t == "T4" & 
+               meta$ajcc_pathologic_n == "N0" & meta$ajcc_pathologic_m == "MX"] <- 3.1  # Stage IIIA (M0 가정)
+sum(is.na(meta$Stage))
+
+tnm_not_na <- stNa[!is.na(stNa$ajcc_pathologic_t) | 
+                     !is.na(stNa$ajcc_pathologic_n) | 
+                     !is.na(stNa$ajcc_pathologic_m), ]
+tnm_not_na[,c("Stage", "ajcc_pathologic_t", "ajcc_pathologic_n", "ajcc_pathologic_m", 
+              "tissue_type", "shortLetterCode")]
+
+meta$Stage[is.na(meta$Stage) & meta$tissue_type == "Tumor" & 
+               meta$ajcc_pathologic_t == "T1a" & 
+               meta$ajcc_pathologic_n == "NX" & is.na(meta$ajcc_pathologic_m)] <- 1.1  # Stage IA (NX = N0 가정)
+meta$Stage[is.na(meta$Stage) & meta$tissue_type == "Tumor" & 
+               meta$ajcc_pathologic_t == "T2b" & 
+               is.na(meta$ajcc_pathologic_n) & is.na(meta$ajcc_pathologic_m)] <- 2.1  # Stage IIA (N0, M0 가정)
+sum(is.na(meta$Stage))
+
+### 
+
+
+
+
+
+# DEG analysis =================================================================
 dim(exp_matrix)
 table(metadata$shortLetterCode)
 
