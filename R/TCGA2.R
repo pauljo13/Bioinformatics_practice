@@ -1,5 +1,5 @@
 # DEG used TCGA data
-# istall packages and load library
+# install packages and load library
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManger")
 
@@ -39,19 +39,49 @@ exp_matrix <- assay(data)
 metadata <- colData(data)
 row_data <- rowData(data)
 
+# EDA
 View(exp_matrix)
 View(metadata)
 View(row_data)
 
+dim(exp_matrix)
+meta <-as.data.frame(metadata)
+dim(meta)
+dim(row_data)
+
 gene_symbol <- tibble("ID" = row_data$gene_id,"Name" = row_data$gene_name,"Type" = row_data$gene_type)
 gene_symbol
-
 
 new_rowname <- gene_symbol$Name[match(rownames(exp_matrix), gene_symbol$ID)]
 rownames(exp_matrix) <- new_rowname
 exp_matrix <- exp_matrix[!is.na(rownames(exp_matrix)), ]
 
-dim(exp_matrix)
+### data sample type
+freq <- table(meta$shortLetterCode)
+percent <- round(prop.table(freq) * 100, 2)  # prop.table로 비율 계산 후 퍼센트로 변환
+labels_with_percent <- paste(names(freq), " (", percent, "%)", sep = "")
+pie(freq, labels = labels_with_percent, col = c("red", "blue", "green"), main="shortLetterCode")
+
+### Tumor stage
+stage <- table(meta$ajcc_pathologic_stage)
+print(stage)
+print(names(stage))
+ggplot(meta, aes(ajcc_pathologic_stage)) +
+  geom_bar()
+print(sum(is.na(meta$ajcc_pathologic_stage)))
+print(round((sum(is.na(meta$ajcc_pathologic_stage)) / dim(meta)[1]) * 100, 2))
+mapping <- data.frame(
+  Stage = c("Stage I", "Stage IA", "Stage IB", "Stage II", "Stage IIA", "Stage IIB", 
+            "Stage IIIA", "Stage IIIB", "Stage IV"),
+  Numeric = c(1.0, 1.1, 1.2, 2.0, 2.1, 2.2, 3.1, 3.2, 4.0)
+)
+meta$Stage <- mapping$Numeric[match(meta$ajcc_pathologic_stage, mapping$Stage)]
+meta$Stage[is.na(meta$Stage) & meta$shortLetterCode == "NT"] <- 0.0
+head(meta$Stage)
+ggplot(meta, aes(Stage)) +
+  geom_freqpoly()
+sum(is.na(meta$Stage))
+View(meta[is.na(meta$Stage),]
 
 # DEG analysis
 dim(exp_matrix)

@@ -21,4 +21,12 @@ Below is a summary of my daily learning milestones:
     - [R1](R/DEG.R)
     - [R2](R/DEG2.R)
 
+### Practice
+##### data
+- project id : TCGA-LUAD
+- data.category : Transcriptome Profiling
+- data.type : Gene Expression Quantification
+- Lung Adenocarcinoma
+
+
 
