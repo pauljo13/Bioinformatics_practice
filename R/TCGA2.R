@@ -53,7 +53,7 @@ need_col <- c("barcode","patient","shortLetterCode", "tumor_descriptor", "sample
               "tissue_type", "age_at_diagnosis", "laterality", "treatments",
               "tissue_or_organ_of_origin", "primary_diagnosis", "prior_treatment", "classification_of_tumor",
               "icd_10_code", "tumor_of_origin", "sites_of_involvement", "tobacco_smoking_quit_year",
-              "tobacco_smoking_status", "pack_years_smoked", "gender", "race", "ethnicity", "vital_status",
+              "tobacco_smoking_status", "pack_years_smoked", "gender", "race", "vital_status",
               "age_at_index", "days_to_death", "primary_site", "ajcc_pathologic_stage", "ajcc_pathologic_t", "ajcc_pathologic_n", "ajcc_pathologic_m")
 meta <- meta[,need_col]
 dim(meta)
@@ -67,18 +67,25 @@ new_rowname <- gene_symbol$Name[match(rownames(exp_matrix), gene_symbol$ID)]
 rownames(exp_matrix) <- new_rowname
 exp_matrix <- exp_matrix[!is.na(rownames(exp_matrix)), ]
 
+# data type
+col_types <- sapply(meta, class)
+print(col_types)
+int <- names(col_types[col_types == "integer"])
+chr <- names(col_types[col_types == "character"])
+lis <- names(col_types[col_types == "list"])
+numer <- names(col_types[col_types == "numeric"]) 
+
 ### data sample type
 freq <- table(meta$shortLetterCode)
 percent <- round(prop.table(freq) * 100, 2)  # prop.table로 비율 계산 후 퍼센트로 변환
 labels_with_percent <- paste(names(freq), " (", percent, "%)", sep = "")
 pie(freq, labels = labels_with_percent, col = c("red", "blue", "green"), main="shortLetterCode")
 
-### Tumor stage
+## Tumor stage
 stage <- table(meta$ajcc_pathologic_stage)
 print(stage)
 print(names(stage))
-ggplot(meta, aes(ajcc_pathologic_stage)) +
-  geom_bar()
+
 print(sum(is.na(meta$ajcc_pathologic_stage)))
 print(round((sum(is.na(meta$ajcc_pathologic_stage)) / dim(meta)[1]) * 100, 2))
 mapping <- data.frame(
@@ -92,7 +99,7 @@ sum(is.na(meta$Stage))
 table(meta$shortLetterCode)
 mean(meta[meta$shortLetterCode == "TP", ]$Stage, na.rm = TRUE)
 
-## Stage 결측치 처리
+### Stage 결측치 처리
 stNa <- meta[is.na(meta$Stage),]
 tnm_not_na <- stNa[!is.na(stNa$ajcc_pathologic_t) & 
                      !is.na(stNa$ajcc_pathologic_n) & 
@@ -137,12 +144,68 @@ meta$Stage[is.na(meta$Stage) & meta$tissue_type == "Tumor" &
 meta$Stage[is.na(meta$Stage) & meta$tissue_type == "Tumor" & 
                meta$ajcc_pathologic_t == "T2b" & 
                is.na(meta$ajcc_pathologic_n) & is.na(meta$ajcc_pathologic_m)] <- 2.1  # Stage IIA (N0, M0 가정)
+sum(is.na(meta$Stage)) / dim(meta)[1]
+stNa <- meta[is.na(meta$Stage),]
+
+tumor_median <- median(meta$Stage[meta$tissue_type == "Tumor"], na.rm = TRUE)
+cat("Tumor 샘플의 중앙값:", tumor_median, "\n")
+
+meta$Stage[is.na(meta$Stage)] <- tumor_median
 sum(is.na(meta$Stage))
 
-### 
+### Stage 이상치 확인
+NT_stage <- meta[meta$shortLetterCode == "NT" & meta$Stage != 0.0,]
+dim(NT_stage)
+NT_all_tnm_na <- NT_stage[is.na(NT_stage$ajcc_pathologic_t) & 
+                     is.na(NT_stage$ajcc_pathologic_n) & 
+                     is.na(NT_stage$ajcc_pathologic_m), ]
+NT_tnm_na <- NT_stage[is.na(NT_stage$ajcc_pathologic_t) | 
+                            is.na(NT_stage$ajcc_pathologic_n) | 
+                            is.na(NT_stage$ajcc_pathologic_m), ]
+dim(NT_all_tnm_na)
+dim(NT_tnm_na)
 
+#### NT_stage와 동일 환자의 TP 샘플 추출
+NT_patients <- unique(NT_stage$patient)
+TP_stage <- meta[meta$shortLetterCode == "TP" & meta$patient %in% NT_patients, ]
 
+#### 환자별 Stage 비교
+library(dplyr)
+stage_comparison <- meta %>%
+  filter(patient %in% NT_patients) %>%
+  group_by(patient) %>%
+  summarise(
+    NT_Stage = unique(Stage[shortLetterCode == "NT"]),
+    TP_Stage = unique(Stage[shortLetterCode == "TP"]),
+    NT_Count = sum(shortLetterCode == "NT"),
+    TP_Count = sum(shortLetterCode == "TP")
+  ) %>%
+  filter(!is.na(NT_Stage))
 
+#### 결과 출력
+print(stage_comparison)
+cat("NT와 TP의 Stage가 일치하는 환자 수:", 
+    sum(stage_comparison$NT_Stage == stage_comparison$TP_Stage, na.rm = TRUE), "\n")
+
+duplicated_patients <- sum(duplicated(meta$patient))
+
+cat("중복된 patient 개수:", duplicated_patients, "\n")
+
+### duplicated
+sum(duplicated(meta))
+
+### Gender
+gender <- table(meta$gender)
+sum(is.na(meta$gender))
+percent <- round(prop.table(gender) * 100, 2)  # prop.table로 비율 계산 후 퍼센트로 변환
+labels_with_percent <- paste(names(gender), " (", percent, "%)", sep = "")
+pie(gender, labels = labels_with_percent,  col = c("red", "blue"), main= "Gender")
+
+### int data
+for (i in int) {
+  cat("=====", i, "=====\n")
+  print(summary(meta[i]))
+}
 
 
 # DEG analysis =================================================================
@@ -276,3 +339,5 @@ Boxplot_gene(exp_long, top_genes[7])
 Boxplot_gene(exp_long, top_genes[8])
 Boxplot_gene(exp_long, top_genes[9])
 Boxplot_gene(exp_long, top_genes[10])
+
+# 
