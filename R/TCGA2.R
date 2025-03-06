@@ -207,6 +207,9 @@ for (i in int) {
   print(summary(meta[i]))
 }
 
+### 
+row_df <- as.data.frame(row_data)
+View(row_df)
 
 # DEG analysis =================================================================
 dim(exp_matrix)
