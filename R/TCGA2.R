@@ -8,7 +8,17 @@ BiocManager::install("limma")
 BiocManager::install("edgeR")
 BiocManager::install("tidyverse")
 BiocManager::install("biomaRt")
+BiocManager::install("SummarizedExperiment")
 
+BiocManager::install("clusterProfiler")
+BiocManager::install("org.Hs.eg.db")
+BiocManager::install("KEGGREST")
+BiocManager::install("DOSE")
+
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("dviraran/xCell")
 
 library(TCGAbiolinks)
 library(DESeq2)
@@ -20,7 +30,13 @@ library(limma)
 library(edgeR)
 library(tidyverse)
 library(biomaRt)
+library(SummarizedExperiment)
 
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(xCell)
+library(KEGGREST)
+library(DOSE)
 # data load ===================================================================
 # TCGA-LUAD 데이터를 검색
 query <- GDCquery(
@@ -213,11 +229,11 @@ View(row_df)
 
 # DEG analysis =================================================================
 dim(exp_matrix)
-table(metadata$shortLetterCode)
+table(meta$shortLetterCode)
 
-metadata_filtered <- metadata[metadata$shortLetterCode %in% c("NT", "TP"), ]
-exp_matrix_filtered <- exp_matrix[, metadata$shortLetterCode %in% c("NT", "TP")]
-table(metadata_filtered$shortLetterCode)
+metadata_filtered <- meta[meta$shortLetterCode %in% c("NT", "TP"), ]
+exp_matrix_filtered <- exp_matrix[, meta$shortLetterCode %in% c("NT", "TP")]
+table(meta$shortLetterCode)
 
 # DGElist 
 dge <- DGEList(counts = exp_matrix_filtered)
@@ -343,4 +359,49 @@ Boxplot_gene(exp_long, top_genes[8])
 Boxplot_gene(exp_long, top_genes[9])
 Boxplot_gene(exp_long, top_genes[10])
 
-# 
+# TIME ========================================================================
+table(meta$sample_type)
+table(meta$shortLetterCode)
+
+## group
+dim(meta)
+metadata_filtered <- meta[meta$shortLetterCode %in% c("NT", "TP"), ]
+exp_matrix_filtered <- exp_matrix[, meta$shortLetterCode %in% c("NT", "TP")]
+dim(metadata_filtered)
+group <- factor(metadata_filtered$shortLetterCode, levels = c("NT", "TP"))
+
+dge <- DGEList(counts = exp_matrix_filtered, group = group)
+keep <- filterByExpr(dge)
+dge <- dge[keep, , keep.lib.sizes = FALSE]
+
+dge <- calcNormFactors(dge, method = "TMM")
+
+v <- voom(dge, design = NULL, plot = TRUE)
+
+design <- model.matrix(~0 + group)
+colnames(design) <- levels(group)
+
+print(design)
+
+## limma DGEs
+fit <- lmFit(v, design = design)
+contrast.matrix <- makeContrasts(TP - NT, levels = design)
+
+fit2 <- contrasts.fit(fit, contrast.matrix)
+fit2 <- eBayes(fit2)
+
+results <- as.data.frame(topTable(fit2, coef = 1, number = Inf, p.value = 0.05))
+head(results)
+
+deg_filtered <- results[results$adj.P.Val < 0.05 & abs(results$logFC) > 1, ]
+cat("유의미한 DEGs 수:", nrow(deg_filtered), "\n")
+print(head(deg_filtered))
+
+new_rowname <- row_df$gene_name[match(rownames(results), row_df$gene_name)]
+na_indices <- is.na(new_rowname)
+new_rowname[na_indices] <- rownames(results)[na_indices]  # NA를 원래 이름으로 대체
+new_rowname <- make.unique(new_rowname)
+rownames(results) <- new_rowname
+
+cell_types <- xCell.data$cell.types
+print(cell_types)
