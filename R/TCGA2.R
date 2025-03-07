@@ -15,11 +15,6 @@ BiocManager::install("org.Hs.eg.db")
 BiocManager::install("KEGGREST")
 BiocManager::install("DOSE")
 
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes")
-}
-remotes::install_github("dviraran/xCell")
-
 library(TCGAbiolinks)
 library(DESeq2)
 library(ggplot2)
@@ -34,7 +29,6 @@ library(SummarizedExperiment)
 
 library(clusterProfiler)
 library(org.Hs.eg.db)
-library(xCell)
 library(KEGGREST)
 library(DOSE)
 # data load ===================================================================
@@ -383,7 +377,7 @@ colnames(design) <- levels(group)
 
 print(design)
 
-## limma DGEs
+## limma DGEs ====== 문제 발생 
 fit <- lmFit(v, design = design)
 contrast.matrix <- makeContrasts(TP - NT, levels = design)
 
@@ -403,5 +397,17 @@ new_rowname[na_indices] <- rownames(results)[na_indices]  # NA를 원래 이름�
 new_rowname <- make.unique(new_rowname)
 rownames(results) <- new_rowname
 
-cell_types <- xCell.data$cell.types
-print(cell_types)
+
+getwd()
+setwd("/Users/knu_cgl1/Desktop/Study/repositories/")
+
+immune_markers <- read.csv("LM22.txt", sep = "\t")
+immune_markers <- immune_markers$Gene.symbol
+
+immune_degs <- results[rownames(results) %in% immune_markers, ]
+immune_deg_filtered <- deg_filtered[rownames(deg_filtered) %in% immune_markers, ]
+
+# 결과 출력
+cat("전체 면역 관련 DEGs 수:", nrow(immune_degs), "\n")
+cat("유의미한 면역 관련 DEGs 수:", nrow(immune_deg_filtered), "\n")
+print(head(immune_deg_filtered))
