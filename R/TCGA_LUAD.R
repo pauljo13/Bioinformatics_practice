@@ -178,8 +178,25 @@ Boxplot_gene <- function(df, g) {
 
 
 # UMAP =============================================================
+if (!requireNamespace("uwot", quietly = TRUE)) 
+  install.packages("uwot")
 
+library(uwot)
+umap_results <- umap(t(exp_matrix_filtered), 
+                     n_neighbors = 15, 
+                     min_dist = 0.1, 
+                     metric = "euclidean")
+umap_df <- data.frame(
+  UMAP1 = umap_results[,1],
+  UMAP2 = umap_results[,2],
+  Group = metadata_filtered$shortLetterCode
+)
 
+ggplot(umap_df, aes(x = UMAP1, y = UMAP2, color = Group)) +
+  geom_point(size = 2, alpha = 0.8) +
+  theme_minimal() +
+  scale_color_manual(values = c("NT" = "blue", "TP" = "red")) +
+  labs(title = "UMAP Clustering of TCGA-LUAD Samples", x = "UMAP1", y = "UMAP2")
 
 # Survival =========================================================
 
