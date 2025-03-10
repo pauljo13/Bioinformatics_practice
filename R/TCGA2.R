@@ -221,6 +221,10 @@ for (i in int) {
 row_df <- as.data.frame(row_data)
 View(row_df)
 
+getwd()
+setwd("GDCdata/")
+write_csv(meta, file = "metadata.csv", col_names = TRUE)
+
 # DEG analysis =================================================================
 dim(exp_matrix)
 table(meta$shortLetterCode)
@@ -385,13 +389,13 @@ fit2 <- contrasts.fit(fit, contrast.matrix)
 fit2 <- eBayes(fit2)
 
 results <- as.data.frame(topTable(fit2, coef = 1, number = Inf, p.value = 0.05))
-head(results)
+View(results)
 
 deg_filtered <- results[results$adj.P.Val < 0.05 & abs(results$logFC) > 1, ]
 cat("유의미한 DEGs 수:", nrow(deg_filtered), "\n")
 print(head(deg_filtered))
 
-new_rowname <- row_df$gene_name[match(rownames(results), row_df$gene_name)]
+new_rowname <- row_df$gene_name[match(rownames(results), rownames(row_df))]
 na_indices <- is.na(new_rowname)
 new_rowname[na_indices] <- rownames(results)[na_indices]  # NA를 원래 이름으로 대체
 new_rowname <- make.unique(new_rowname)
@@ -403,6 +407,9 @@ setwd("/Users/knu_cgl1/Desktop/Study/repositories/")
 
 immune_markers <- read.csv("LM22.txt", sep = "\t")
 immune_markers <- immune_markers$Gene.symbol
+print(immune_markers)
+print(rownames(results))
+
 
 immune_degs <- results[rownames(results) %in% immune_markers, ]
 immune_deg_filtered <- deg_filtered[rownames(deg_filtered) %in% immune_markers, ]
@@ -411,3 +418,5 @@ immune_deg_filtered <- deg_filtered[rownames(deg_filtered) %in% immune_markers, 
 cat("전체 면역 관련 DEGs 수:", nrow(immune_degs), "\n")
 cat("유의미한 면역 관련 DEGs 수:", nrow(immune_deg_filtered), "\n")
 print(head(immune_deg_filtered))
+
+
