@@ -135,11 +135,11 @@ class rcClassChild2(rcClassChild):
         self.temp_seq = self.orig_seq[::-1]
         self.rev_seq = ''.join([rcClass.nt_pairH.get(nt, 'X') for nt in self.temp_seq])
 
-def fileCapitalize(inFilename, outFilename):
-    in_file = open(inFilename,'r')
-    out_file = open(outFilename, 'w')
+def fileCapitalize(inFilename, outFilename): # 파일을 열어서 대문자화한 파일를 저장함
+    in_file = open(inFilename,'r') # 파일을 읽음
+    out_file = open(outFilename, 'w') # 파일을 씀
     for line in in_file:
-        out_file.write(line[:-1].upper() + '\n')
+        out_file.write(line[:-1].upper() + '\n') # 대문자화
         #out_file.write(line.upper())
     in_file.close()
     out_file.close()
