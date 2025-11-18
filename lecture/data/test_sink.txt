@@ -1,0 +1,17 @@
+the sum of column 1: 333
+----------------
+the sum of column 2: 342
+----------------
+the sum of column 3: 351
+----------------
+the sum of column 4: 360
+----------------
+the sum of column 5: 369
+----------------
+the sum of column 6: 378
+----------------
+the sum of column 7: 387
+----------------
+the sum of column 8: 396
+----------------
+the sum of column 9: 405
