@@ -1,0 +1,15 @@
+GSMID	Sample	Type
+GSM622234	CNSlymphoma_rep1	PCNSL
+GSM622235	CNSlymphoma_rep2	PCNSL
+GSM622236	CNSlymphoma_rep3	PCNSL
+GSM622237	CNSlymphoma_rep4	PCNSL
+GSM622238	CNSlymphoma_rep5	PCNSL
+GSM622239	CNSlymphoma_rep6	PCNSL
+GSM622240	CNSlymphoma_rep7	PCNSL
+GSM622241	NormalLymphNode_rep1	Normal
+GSM622242	NormalLymphNode_rep2	Normal
+GSM622243	NormalLymphNode_rep3	Normal
+GSM622244	NormalLymphNode_rep4	Normal
+GSM622245	NormalLymphNode_rep5	Normal
+GSM622246	NormalLymphNode_rep6	Normal
+GSM622247	NormalLymphNode_rep7	Normal
